@@ -2,6 +2,7 @@ const express = require('express')
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express()
+const jwt = require('jsonwebtoken');
 require('dotenv').config()
 const port = process.env.PORT || 5000;
 
@@ -16,10 +17,10 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 async function run(){
   try{
-    
     await client.connect();
     const toolsCollection = client.db("manufacture_tools").collection("tools") ;
     const purchaseCollection = client.db("manufacture_tools").collection("purchases") ;
+    const userCollection = client.db("manufacture_tools").collection("users") ;
 
     // get all tools load database  api
     app.get('/tools', async(req, res) => {
@@ -27,14 +28,27 @@ async function run(){
       const result = await toolsCollection.find(query).toArray();
       res.send(result);
     })
-
-
     // get on tool load database  api 
     app.get('/tools/:id', async(req, res) => {
       const id = req.params.id ;
       const query = {_id : ObjectId(id)} ;
       const tool = await toolsCollection.findOne(query) ;
       res.send(tool);
+    })
+
+    //
+    app.put('/user/:email', async(req, res) => {
+      const email = req.params.email ;
+      const user = req.body ;
+      const filter = {email: email}  ;
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: user,
+      };
+
+      const result = await userCollection.updateOne(filter, updateDoc, options) ;
+
+      
     })
 
     // all purchase post is api 
