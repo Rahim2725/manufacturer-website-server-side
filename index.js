@@ -3,6 +3,7 @@ const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express()
 const jwt = require('jsonwebtoken');
+const sign = require('jsonwebtoken/sign');
 require('dotenv').config()
 const port = process.env.PORT || 5000;
 
@@ -45,9 +46,10 @@ async function run(){
       const updateDoc = {
         $set: user,
       };
-
       const result = await userCollection.updateOne(filter, updateDoc, options) ;
+      const token = sign({email: email}, process.env.ACCESS_TOKEN, { expiresIn: '1d' });
 
+      res.send({result, token})
       
     })
 
@@ -56,7 +58,6 @@ async function run(){
       const purchase = req.body ;
       const result = await purchaseCollection.insertOne(purchase) ;
       res.send(result)
-      console.log(purchase)
     })
 
     
