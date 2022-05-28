@@ -82,12 +82,23 @@ async function run(){
       res.send(result)
     })
 
+    // user purchase by on user  email 
     app.get('/purchase', async(req, res) => {
       const email = req.query.email ;
       const authHeader = req.headers.authorization;
       const query = {email:email} ;
       const orders = await purchaseCollection.find(query).toArray() ;
       res.send(orders) ;
+    })
+
+
+    // delete purchase api 
+    app.delete('/purchase', async(req, res) => {
+      const id = req.query.id ;
+      console.log(id);
+      const query = {_id: ObjectId(id)} ;
+      const result = await purchaseCollection.deleteOne(query) ;
+      res.send(result) ;
     })
 
     
