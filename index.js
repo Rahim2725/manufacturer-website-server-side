@@ -53,6 +53,7 @@ async function run() {
       const result = await toolsCollection.find(query).toArray();
       res.send(result);
     })
+
     // get on tool load database  api 
     app.get('/tools/:id', verifyJWT, async (req, res) => {
       const id = req.params.id;
@@ -94,12 +95,6 @@ async function run() {
 
     })
 
-    //user add uer infomesotion api 
-
-    app.put()
-
-
-
 
     // all user load an api
     app.get('/users', verifyJWT, async (req, res) => {
@@ -109,7 +104,7 @@ async function run() {
 
 
     // review all load 
-    app.get('/review', verifyJWT,  async (req, res) => {
+    app.get('/review',  async (req, res) => {
       const review = await reviewCollection.find().toArray();
       res.send(review);
     })
