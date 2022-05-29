@@ -44,6 +44,7 @@ async function run() {
     const toolsCollection = client.db("manufacture_tools").collection("tools");
     const purchaseCollection = client.db("manufacture_tools").collection("purchases");
     const userCollection = client.db("manufacture_tools").collection("users");
+    const reviewCollection = client.db("manufacture_tools").collection("reviews");
 
     // get all tools load database  api
     app.get('/tools', async (req, res) => {
@@ -59,11 +60,21 @@ async function run() {
       res.send(tool);
     })
 
-    app.delete('/product/:id', async(req, res) => {
-      const id = req.params.id ;
-      const query = {_id: ObjectId(id)};
-      const result = await toolsCollection.deleteOne(query) ;
-      res.send(result) ;
+
+    // product add tools collections
+    app.post('/product', async (req, res) => {
+      const product = req.body;
+
+      const result = await toolsCollection.insertOne(product);
+      res.send(result);
+
+    })
+
+    app.delete('/product/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await toolsCollection.deleteOne(query);
+      res.send(result);
     })
 
 
@@ -91,12 +102,27 @@ async function run() {
     })
 
 
+    // review all load 
+    app.get('/review', async (req, res) => {
+      const review = await reviewCollection.find().toArray();
+      res.send(review);
+    })
+
+
+    // post review api 
+    app.post('/review', async (req, res) => {
+      const review = req.body;
+      const result = await purchaseCollection.insertOne(review);
+      res.send(result)
+    })
+
+
     // chake this admin 
-    app.get('/admin/:email', verifyJWT, async(req, res) => {
-      const email = req.params.email ;
-      const user = await userCollection.findOne({email: email})
-      const isAdmin = user.role === 'admin' ;
-      res.send({admin: isAdmin})
+    app.get('/admin/:email', verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      const user = await userCollection.findOne({ email: email })
+      const isAdmin = user.role === 'admin';
+      res.send({ admin: isAdmin })
       // res.send({admin:isAdmin})
     })
 
@@ -105,7 +131,7 @@ async function run() {
 
       const email = req.params.email;
       const requester = req.decoded.email;
-      console.log(requester) ;
+      console.log(requester);
       const requesterAccount = await userCollection.findOne({ email: requester });
       // console.log(email) ; 
       console.log(requesterAccount)
@@ -117,8 +143,8 @@ async function run() {
         const result = await userCollection.updateOne(filter, updateDoc);
         res.send(result)
       }
-      else{
-        res.status(403).send({message: 'Forbidden'}) ;
+      else {
+        res.status(403).send({ message: 'Forbidden' });
       }
 
     })
@@ -131,13 +157,14 @@ async function run() {
     })
 
     // all load purchase api
-    app.get('/purchases', verifyJWT,  async (req, res) => {
+    app.get('/purchases', verifyJWT, async (req, res) => {
       const purchase = await purchaseCollection.find().toArray();
       res.send(purchase)
     })
 
 
-    app.put('/purchase/:id', verifyJWT,  async (req, res) => {
+    // admin order sate change 
+    app.put('/purchase/:id', verifyJWT, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: ObjectId(id) }
       const updateDoc = {
@@ -149,7 +176,7 @@ async function run() {
     )
 
     // user purchase by on user get on api  email 
-    app.get('/purchase/:email', verifyJWT,  async (req, res) => {
+    app.get('/purchase/:email', verifyJWT, async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
       const orders = await purchaseCollection.find(query).toArray();
@@ -158,7 +185,7 @@ async function run() {
 
 
     // delete purchase api 
-    app.delete('/purchase/:id',  async (req, res) => {
+    app.delete('/purchase/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await purchaseCollection.deleteOne(query);
