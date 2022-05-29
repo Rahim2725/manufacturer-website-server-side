@@ -38,72 +38,136 @@ function verifyJWT(req, res, next) {
 }
 
 
-async function run(){
-  try{
+async function run() {
+  try {
     await client.connect();
-    const toolsCollection = client.db("manufacture_tools").collection("tools") ;
-    const purchaseCollection = client.db("manufacture_tools").collection("purchases") ;
-    const userCollection = client.db("manufacture_tools").collection("users") ;
+    const toolsCollection = client.db("manufacture_tools").collection("tools");
+    const purchaseCollection = client.db("manufacture_tools").collection("purchases");
+    const userCollection = client.db("manufacture_tools").collection("users");
 
     // get all tools load database  api
-    app.get('/tools', async(req, res) => {
-      const query = {} ;
+    app.get('/tools', async (req, res) => {
+      const query = {};
       const result = await toolsCollection.find(query).toArray();
       res.send(result);
     })
     // get on tool load database  api 
-    app.get('/tools/:id', async(req, res) => {
-      const id = req.params.id ;
-      const query = {_id : ObjectId(id)} ;
-      const tool = await toolsCollection.findOne(query) ;
+    app.get('/tools/:id', verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const tool = await toolsCollection.findOne(query);
       res.send(tool);
     })
 
-    //
-    app.put('/user/:email', async(req, res) => {
-      const email = req.params.email ;
-      const user = req.body ;
-      const filter = {email: email}  ;
+    app.delete('/product/:id', async(req, res) => {
+      const id = req.params.id ;
+      const query = {_id: ObjectId(id)};
+      const result = await toolsCollection.deleteOne(query) ;
+      res.send(result) ;
+    })
+
+
+    // crate token by login
+    app.put('/user/:email', async (req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+      const filter = { email: email };
       const options = { upsert: true };
       const updateDoc = {
         $set: user,
       };
-      const result = await userCollection.updateOne(filter, updateDoc, options) ;
-      const token = sign({email: email}, process.env.ACCESS_TOKEN, { expiresIn: '1d' });
+      const result = await userCollection.updateOne(filter, updateDoc, options);
+      const token = sign({ email: email }, process.env.ACCESS_TOKEN, { expiresIn: '1d' });
 
-      res.send({result, token})
-      
+      res.send({ result, token })
+
+    })
+
+
+    // all user load an api
+    app.get('/users', verifyJWT, async (req, res) => {
+      const user = await userCollection.find().toArray();
+      res.send(user);
+    })
+
+
+    // chake this admin 
+    app.get('/admin/:email', verifyJWT, async(req, res) => {
+      const email = req.params.email ;
+      const user = await userCollection.findOne({email: email})
+      const isAdmin = user.role === 'admin' ;
+      res.send({admin: isAdmin})
+      // res.send({admin:isAdmin})
+    })
+
+
+    app.put('/user/admin/:email', verifyJWT, async (req, res) => {
+
+      const email = req.params.email;
+      const requester = req.decoded.email;
+      console.log(requester) ;
+      const requesterAccount = await userCollection.findOne({ email: requester });
+      // console.log(email) ; 
+      console.log(requesterAccount)
+      if (requesterAccount.role === 'admin') {
+        const filter = { email: email };
+        const updateDoc = {
+          $set: { role: 'admin' },
+        };
+        const result = await userCollection.updateOne(filter, updateDoc);
+        res.send(result)
+      }
+      else{
+        res.status(403).send({message: 'Forbidden'}) ;
+      }
+
     })
 
     // all purchase post is api 
-    app.post('/purchase', async(req, res) => {
-      const purchase = req.body ;
-      const result = await purchaseCollection.insertOne(purchase) ;
+    app.post('/purchase', async (req, res) => {
+      const purchase = req.body;
+      const result = await purchaseCollection.insertOne(purchase);
       res.send(result)
     })
 
-    // user purchase by on user  email 
-    app.get('/purchase', async(req, res) => {
-      const email = req.query.email ;
-      const authHeader = req.headers.authorization;
-      const query = {email:email} ;
-      const orders = await purchaseCollection.find(query).toArray() ;
-      res.send(orders) ;
+    // all load purchase api
+    app.get('/purchases', verifyJWT,  async (req, res) => {
+      const purchase = await purchaseCollection.find().toArray();
+      res.send(purchase)
+    })
+
+
+    app.put('/purchase/:id', verifyJWT,  async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) }
+      const updateDoc = {
+        $set: { position: 'deliver' },
+      };
+      const result = await purchaseCollection.updateOne(filter, updateDoc);
+      res.send(result)
+    }
+    )
+
+    // user purchase by on user get on api  email 
+    app.get('/purchase/:email', verifyJWT,  async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const orders = await purchaseCollection.find(query).toArray();
+      res.send(orders);
     })
 
 
     // delete purchase api 
-    app.delete('/purchase', async(req, res) => {
-      const id = req.query.id ;
-      console.log(id);
-      const query = {_id: ObjectId(id)} ;
-      const result = await purchaseCollection.deleteOne(query) ;
-      res.send(result) ;
+    app.delete('/purchase/:id',  async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await purchaseCollection.deleteOne(query);
+      res.send(result);
     })
 
-    
+
   }
-  finally{
+  finally {
     // await client.close()
   }
 }
