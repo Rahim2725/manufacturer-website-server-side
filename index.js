@@ -46,6 +46,7 @@ async function run() {
     const userCollection = client.db("manufacture_tools").collection("users");
     const reviewCollection = client.db("manufacture_tools").collection("reviews");
 
+
     // get all tools load database  api
     app.get('/tools', async (req, res) => {
       const query = {};
@@ -62,15 +63,14 @@ async function run() {
 
 
     // product add tools collections
-    app.post('/product', async (req, res) => {
+    app.post('/product', verifyJWT,  async (req, res) => {
       const product = req.body;
-
       const result = await toolsCollection.insertOne(product);
       res.send(result);
 
     })
 
-    app.delete('/product/:id', async (req, res) => {
+    app.delete('/product/:id', verifyJWT, async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await toolsCollection.deleteOne(query);
@@ -78,7 +78,7 @@ async function run() {
     })
 
 
-    // crate token by login
+    // crate token by login create account 
     app.put('/user/:email', async (req, res) => {
       const email = req.params.email;
       const user = req.body;
@@ -94,6 +94,12 @@ async function run() {
 
     })
 
+    //user add uer infomesotion api 
+
+    app.put()
+
+
+
 
     // all user load an api
     app.get('/users', verifyJWT, async (req, res) => {
@@ -103,16 +109,17 @@ async function run() {
 
 
     // review all load 
-    app.get('/review', async (req, res) => {
+    app.get('/review', verifyJWT,  async (req, res) => {
       const review = await reviewCollection.find().toArray();
       res.send(review);
     })
 
 
     // post review api 
-    app.post('/review', async (req, res) => {
+    app.post('/review', verifyJWT,  async (req, res) => {
       const review = req.body;
-      const result = await purchaseCollection.insertOne(review);
+      console.log(review)
+      const result = await reviewCollection.insertOne(review);
       res.send(result)
     })
 
@@ -149,12 +156,15 @@ async function run() {
 
     })
 
+
+
     // all purchase post is api 
-    app.post('/purchase', async (req, res) => {
+    app.post('/purchase',  async (req, res) => {
       const purchase = req.body;
       const result = await purchaseCollection.insertOne(purchase);
       res.send(result)
     })
+
 
     // all load purchase api
     app.get('/purchases', verifyJWT, async (req, res) => {
@@ -175,6 +185,7 @@ async function run() {
     }
     )
 
+
     // user purchase by on user get on api  email 
     app.get('/purchase/:email', verifyJWT, async (req, res) => {
       const email = req.params.email;
@@ -185,7 +196,7 @@ async function run() {
 
 
     // delete purchase api 
-    app.delete('/purchase/:id', async (req, res) => {
+    app.delete('/purchase/:id', verifyJWT, async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await purchaseCollection.deleteOne(query);
